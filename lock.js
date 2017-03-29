@@ -30,7 +30,6 @@
         //求点到直线距离
         function getDis(p0, p1, p) {
             var dis
-            // console.log(p0,p1)
             if (p1.x == p0.x) {　　
                 dis = Math.abs(p1.x - p.x)
             } else {　　
@@ -42,7 +41,6 @@
             return dis
         }
 
-        //TODO：触摸
         this.cav.addEventListener('touchstart', (e) => {
             //禁止页面拖动
             e.preventDefault()
@@ -104,7 +102,7 @@
                 this.drawLine(lg[i], lg[i + 1])
             }
 
-            // console.log(e)
+            
         })
         this.cav.addEventListener('touchend', (e) => {
             e.preventDefault()
@@ -121,15 +119,15 @@
             for (var i = 0; i < lg.length - 1; i++) {
                 this.drawLine(lg[i], lg[i + 1])
             }
-            console.log(lg)
+           //TODO: 停止触摸后对页面状态的判定
         })
         //TODO: 选取状态
     }
-    //清除当前所有点的触控状态
+    //TODO:清除当前所有点的触控状态
     PatternUnlock.prototype.clearStatus = function () {
 
     }
-    //更新画布
+    //TODO:更新画布
     PatternUnlock.prototype.update = function () {
 
     }
