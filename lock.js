@@ -13,6 +13,8 @@
     }
     //绑定事件
     PatternUnlock.prototype.bindEvent = function () {
+        //是否一次点击
+        this.oneTouch = true
         //屏幕坐标转变为canvas坐标
         function getPos(event) {
             var e = event
@@ -44,15 +46,18 @@
         this.cav.addEventListener('touchstart', (e) => {
             //禁止页面拖动
             e.preventDefault()
-            var pos = getPos(e)
-            for (var i = 0, radius = this.radius; i < this.pointGroup.length; i++) {
-                var curPoint = this.pointGroup[i]
-                if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius) {
-                    curPoint.click = true
-                    this.linkGroup.push(curPoint)
-                    this.drawPoint(curPoint.y, curPoint.x, 30, true)
+            if (this.oneTouch) {
+                var pos = getPos(e)
+                for (var i = 0, radius = this.radius; i < this.pointGroup.length; i++) {
+                    var curPoint = this.pointGroup[i]
+                    if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius) {
+                        curPoint.click = true
+                        this.linkGroup.push(curPoint)
+                        this.drawPoint(curPoint.y, curPoint.x, 30, true)
+                    }
                 }
             }
+
 
 
         })
@@ -75,7 +80,7 @@
                             //检测是否在连线范围内
                             if (getDis(lastP, pos, this.pointGroup[j]) < radius) {
                                 //检测是否在上一个决定点和移动点之间
-                                if (Math.abs(this.pointGroup[j].x - (pos.x + lastP.x) / 2) < radius && Math.abs(this.pointGroup[j].y - (pos.x + lastP.y) / 2) < radius) {
+                                if (Math.abs(this.pointGroup[j].x - (pos.x + lastP.x) / 2) < radius && Math.abs(this.pointGroup[j].y - (pos.y + lastP.y) / 2) < radius) {
                                     if (!this.pointGroup[j].click) {
                                         this.pointGroup[j].click = true
                                         this.linkGroup.push(this.pointGroup[j])
@@ -98,12 +103,25 @@
             for (var i = 0; i < lg.length - 1; i++) {
                 this.drawLine(lg[i], lg[i + 1])
             }
-           
+
             // console.log(e)
         })
         this.cav.addEventListener('touchend', (e) => {
             e.preventDefault()
-            // console.log(e)
+            //设置为一次连线结束
+            this.oneTouch = false
+            var lg = this.linkGroup
+            var pg = this.pointGroup
+            //最后一次绘图
+            this.ctx.clearRect(0, 0, 400, 400);
+            for (var i = 0, radius = this.radius; i < pg.length; i++) {
+                var curPoint = this.pointGroup[i]
+                this.drawPoint(curPoint.y, curPoint.x, 30, curPoint.click)
+            }
+            for (var i = 0; i < lg.length - 1; i++) {
+                this.drawLine(lg[i], lg[i + 1])
+            }
+            console.log(lg)
         })
         //TODO: 选取状态
     }
@@ -111,8 +129,16 @@
     PatternUnlock.prototype.clearStatus = function () {
 
     }
+    //更新画布
     PatternUnlock.prototype.update = function () {
 
+    }
+    //存储状态
+    PatternUnlock.prototype.storeStatus = function () {
+        //解决Safari无法直接对存在值setItem的问题
+        if (window.localStorage.getItem('lockPwd')) {
+            
+        }
     }
     //画出连线
     PatternUnlock.prototype.drawLine = function (lastp, nowp) {
