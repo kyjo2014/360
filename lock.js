@@ -90,6 +90,7 @@
 
                             }
                         }
+                        //当前触摸点
                         this.linkGroup.push(curPoint)
                         this.drawPoint(curPoint.y, curPoint.x, 30, true)
                     }
