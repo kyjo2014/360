@@ -137,8 +137,18 @@
     PatternUnlock.prototype.storeStatus = function () {
         //解决Safari无法直接对存在值setItem的问题
         if (window.localStorage.getItem('lockPwd')) {
-            
+            window.localStorage.removeItem('lockPwd')
         }
+        window.localStorage.setItem('lockPwd', JSON.stringify(this.linkGroup))
+    }
+    //对比状态
+    PatternUnlock.prototype.compareStatus = function (oldList, newList) {
+        for (var i = 0; i < Math.max(oldList.length, newList.length); i++) {
+            if (oldList[i].id != newList[i].id) {
+                return false
+            }
+        }
+        return true
     }
     //画出连线
     PatternUnlock.prototype.drawLine = function (lastp, nowp) {
@@ -180,6 +190,7 @@
             for (var i = 0; i < 3; i++) {
                 for (var j = 0; j < 3; j++) {
                     this.pointGroup.push({
+                        id: i * 3 + j,
                         x: radius * (i * 4 + 3),
                         y: radius * (j * 4 + 3),
                         click: false
