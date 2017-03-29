@@ -25,6 +25,20 @@
             }
 
         }
+        //求点到直线距离
+        function getDis(p0, p1, p) {
+            var dis
+            // console.log(p0,p1)
+            if (p1.x == p0.x) {　　
+                dis = Math.abs(p1.x - p.x)
+            } else {　　
+                var k = ((p0.y - p1.y) / (p0.x - p1.x))
+                var b = (p0.y * p1.x - p1.y * p0.x) / (p1.x - p0.x)
+                dis = Math.abs(k * p.x - 1 * p.y + b) / Math.sqrt(1 + k * k)
+
+            }　
+            return dis
+        }
 
         //TODO：触摸
         this.cav.addEventListener('touchstart', (e) => {
@@ -47,17 +61,44 @@
             var pos = getPos(e)
             var lg = this.linkGroup
             var pg = this.pointGroup
+            this.ctx.clearRect(0, 0, 400, 400);
+
             if (lg.length != 0) {
                 var lastP = lg[lg.length - 1]
                 for (var i = 0, radius = this.radius; i < pg.length; i++) {
                     var curPoint = this.pointGroup[i]
+                    this.drawPoint(this.pointGroup[i].y, this.pointGroup[i].x, 30, curPoint.click)
                     if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius && !curPoint.click) {
                         curPoint.click = true
+                        //避免中途绕过点
+                        for (var j = 0; j < pg.length; j++) {
+                            //检测是否在连线范围内
+                            if (getDis(lastP, pos, this.pointGroup[j]) < radius) {
+                                //检测是否在上一个决定点和移动点之间
+                                if (Math.abs(this.pointGroup[j].x - (pos.x + lastP.x) / 2) < radius && Math.abs(this.pointGroup[j].y - (pos.x + lastP.y) / 2) < radius) {
+                                    if (!this.pointGroup[j].click) {
+                                        this.pointGroup[j].click = true
+                                        this.linkGroup.push(this.pointGroup[j])
+                                        this.drawPoint(this.pointGroup[j].y, this.pointGroup[j].x, 30, true)
+                                    }
+                                }
+
+
+
+                            }
+                        }
                         this.linkGroup.push(curPoint)
                         this.drawPoint(curPoint.y, curPoint.x, 30, true)
                     }
                 }
+
+
+                this.drawLine(lg[lg.length - 1], pos)
             }
+            for (var i = 0; i < lg.length - 1; i++) {
+                this.drawLine(lg[i], lg[i + 1])
+            }
+           
             // console.log(e)
         })
         this.cav.addEventListener('touchend', (e) => {
@@ -73,7 +114,18 @@
     PatternUnlock.prototype.update = function () {
 
     }
+    //画出连线
+    PatternUnlock.prototype.drawLine = function (lastp, nowp) {
+        var context = this.ctx
+        context.save();
+        context.beginPath();
+        context.moveTo(lastp.x, lastp.y);
+        context.lineTo(nowp.x, nowp.y);
+        context.strokeStyle = 'red';
+        context.stroke();
+        context.restore();
 
+    }
     //画出触控点
     PatternUnlock.prototype.drawPoint = function (top, left, radius, fill) {
         var radius = radius || this.radius
