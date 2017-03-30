@@ -9,13 +9,14 @@
         // this.type = 'type'
         this.pointGroup = [] //所有触控点
         this.linkGroup = [] //当前绘画路径点
+        this.savlinkGroup = [] //上次保存的路径点
         this.radius = 0
-        this.status = 1 //1是检查，0是更新
+        this.status = 0 //1是检查密码，0是更新密码
     }
     //绑定事件
     PatternUnlock.prototype.bindEvent = function () {
         //是否一次点击
-        this.oneTouch = true
+        this.oneTouch = false
         //屏幕坐标转变为canvas坐标
         function getPos(event) {
             var e = event
@@ -45,17 +46,18 @@
         this.cav.addEventListener('touchstart', (e) => {
             //禁止页面拖动
             e.preventDefault()
-            if (this.oneTouch) {
-                var pos = getPos(e)
-                for (var i = 0, radius = this.radius; i < this.pointGroup.length; i++) {
-                    var curPoint = this.pointGroup[i]
-                    if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius) {
-                        curPoint.click = true
-                        this.linkGroup.push(curPoint)
-                        this.drawPoint(curPoint.y, curPoint.x, 30, true)
-                    }
+
+            this.oneTouch = !this.oneTouch
+            var pos = getPos(e)
+            for (var i = 0, radius = this.radius; i < this.pointGroup.length; i++) {
+                var curPoint = this.pointGroup[i]
+                if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius) {
+                    curPoint.click = true
+                    this.linkGroup.push(curPoint)
+                    this.drawPoint(curPoint.y, curPoint.x, 30, true)
                 }
             }
+
 
 
 
@@ -122,11 +124,44 @@
                 this.drawLine(lg[i], lg[i + 1])
             }
             //TODO: 停止触摸后对页面状态的判定
-            if (this.status) {
-                this.storeStatus()
-            } else {
+            switch (this.status) {
+                case 0:
+                    if (this.linkGroup.length >= 5) {
+                        this.savlinkGroup = this.linkGroup
+                        this.status = 1
+                        this.clearStatus()
+                        alert('请再次输入密码')
+                    } else {
+                        this.clearStatus()
+                        alert('密码过短')
+                    }
+                    break;
+                case 1:
+                    if (this.compareStatus(this.savlinkGroup, this.linkGroup)) {
+                        this.storeStatus('lockPwd')
+                        this.status = 2
+                        this.clearStatus()
+                        alert('密码已保存')
+                    } else {
+                        this.clearStatus()
+                        alert('密码与第一次输入不一样')
+                    }
+                    break;
+
+                case 2:
+                    console.log(this.compareStatus(JSON.parse(window.localStorage.getItem('lockPwd')), this.linkGroup))
+                    break;
+                default:
+                    break;
 
             }
+            // if (this.status == 0) {
+
+
+            // } else if ()
+            // else if (this.status == 2) {
+
+            // }
         })
         //TODO: 选取状态
     }
@@ -135,6 +170,7 @@
         var pg = this.pointGroup
         var context = this.ctx
         context.clearRect(0, 0, 400, 400);
+        this.linkGroup = []
         for (var i = 0, radius = this.radius; i < pg.length; i++) {
             var curPoint = this.pointGroup[i]
             curPoint.click = false
@@ -147,17 +183,20 @@
 
     }
     //存储状态
-    PatternUnlock.prototype.storeStatus = function () {
+    PatternUnlock.prototype.storeStatus = function (id) {
         //解决Safari无法直接对存在值setItem的问题
-        if (window.localStorage.getItem('lockPwd')) {
-            window.localStorage.removeItem('lockPwd')
+        if (window.localStorage.getItem(id)) {
+            window.localStorage.removeItem(id)
         }
-        if (this.linkGroup.length > 5) {
-            window.localStorage.setItem('lockPwd', JSON.stringify(this.linkGroup))
+        if (this.linkGroup.length >= 5) {
+            window.localStorage.setItem(id, JSON.stringify(this.linkGroup))
+            this.status = !this.status
         } else {
             alert('密码长度太短')
-            this.clearStatus()
+
         }
+        //重置界面状态
+        this.clearStatus()
 
     }
     //对比状态
