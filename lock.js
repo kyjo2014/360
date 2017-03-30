@@ -42,7 +42,13 @@
             }　
             return dis
         }
-
+        this.setVal.addEventListener('click', () => {
+            this.status = 0
+        })
+        this.checkVal.addEventListener('click', () => {
+            this.status = 2
+        })
+        //开始触摸时候
         this.cav.addEventListener('touchstart', (e) => {
             //禁止页面拖动
             e.preventDefault()
@@ -123,17 +129,17 @@
             for (var i = 0; i < lg.length - 1; i++) {
                 this.drawLine(lg[i], lg[i + 1])
             }
-            //TODO: 停止触摸后对页面状态的判定
+            // 停止触摸后对页面状态的判定
             switch (this.status) {
                 case 0:
                     if (this.linkGroup.length >= 5) {
                         this.savlinkGroup = this.linkGroup
                         this.status = 1
                         this.clearStatus()
-                        alert('请再次输入密码')
+                        this.setHint('请再次输入密码')
                     } else {
                         this.clearStatus()
-                        alert('密码过短')
+                        this.setHint('密码长度太短，至少需要5个点')
                     }
                     break;
                 case 1:
@@ -141,15 +147,21 @@
                         this.storeStatus('lockPwd')
                         this.status = 2
                         this.clearStatus()
-                        alert('密码已保存')
+                        this.setHint('密码设置成功')
                     } else {
                         this.clearStatus()
-                        alert('密码与第一次输入不一样')
+                        this.status = 0
+                        this.setHint('两次输入的不一致')
                     }
                     break;
 
                 case 2:
-                    console.log(this.compareStatus(JSON.parse(window.localStorage.getItem('lockPwd')), this.linkGroup))
+                    if (this.compareStatus(JSON.parse(window.localStorage.getItem('lockPwd')), this.linkGroup)) {
+                        this.setHint('密码正确！')
+                    } else {
+                        this.setHint('输入的密码不正确')
+                    }
+                     this.clearStatus()
                     break;
                 default:
                     break;
@@ -192,7 +204,7 @@
             window.localStorage.setItem(id, JSON.stringify(this.linkGroup))
             this.status = !this.status
         } else {
-            alert('密码长度太短')
+            this.setHint('密码长度太短，至少需要5个点')
 
         }
         //重置界面状态
@@ -236,9 +248,16 @@
         context.restore();
 
     }
+    //设置提示
+    PatternUnlock.prototype.setHint = function (val) {
+        this.hint.innerText = val
+    }
     PatternUnlock.prototype.init = function (id) {
         //获取元素        
         var cav = this.cav = document.getElementById(id)
+        this.hint = document.getElementById('info')
+        this.setVal = document.getElementById('set')
+        this.checkVal = document.getElementById('check')
         this.ctx = cav.getContext('2d');
         //创建初始点
         var width = cav.width
@@ -263,6 +282,8 @@
         })
         //绑定事件
         this.bindEvent()
+        //初始化提示语句
+        this.setHint('请输入手势密码')
 
 
     }
