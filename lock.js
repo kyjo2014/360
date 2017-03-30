@@ -6,10 +6,11 @@
      * @param {any} opt 
      */
     function PatternUnlock(opt) {
-        this.type = 'type'
+        // this.type = 'type'
         this.pointGroup = [] //所有触控点
         this.linkGroup = [] //当前绘画路径点
         this.radius = 0
+        this.status = 1 //1是检查，0是更新
     }
     //绑定事件
     PatternUnlock.prototype.bindEvent = function () {
@@ -103,7 +104,7 @@
                 this.drawLine(lg[i], lg[i + 1])
             }
 
-            
+
         })
         this.cav.addEventListener('touchend', (e) => {
             e.preventDefault()
@@ -120,12 +121,25 @@
             for (var i = 0; i < lg.length - 1; i++) {
                 this.drawLine(lg[i], lg[i + 1])
             }
-           //TODO: 停止触摸后对页面状态的判定
+            //TODO: 停止触摸后对页面状态的判定
+            if (this.status) {
+                this.storeStatus()
+            } else {
+
+            }
         })
         //TODO: 选取状态
     }
     //TODO:清除当前所有点的触控状态
     PatternUnlock.prototype.clearStatus = function () {
+        var pg = this.pointGroup
+        var context = this.ctx
+        context.clearRect(0, 0, 400, 400);
+        for (var i = 0, radius = this.radius; i < pg.length; i++) {
+            var curPoint = this.pointGroup[i]
+            curPoint.click = false
+            this.drawPoint(curPoint.y, curPoint.x, 30, curPoint.click)
+        }
 
     }
     //TODO:更新画布
@@ -138,7 +152,13 @@
         if (window.localStorage.getItem('lockPwd')) {
             window.localStorage.removeItem('lockPwd')
         }
-        window.localStorage.setItem('lockPwd', JSON.stringify(this.linkGroup))
+        if (this.linkGroup.length > 5) {
+            window.localStorage.setItem('lockPwd', JSON.stringify(this.linkGroup))
+        } else {
+            alert('密码长度太短')
+            this.clearStatus()
+        }
+
     }
     //对比状态
     PatternUnlock.prototype.compareStatus = function (oldList, newList) {
