@@ -6,23 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        #lock-module {
+            margin: 0 auto;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-    <canvas id="lock" width="400" height="400"></canvas>
-    <div id="info">
-        
+    <div id="lock-module">
     </div>
-    <form action="">
-        <label for="set">设置密码</label>
-        <input type="radio" name="status" id="set">
-        <label for="check">验证密码</label>
-        <input type="radio" name="status" id="check">
-    </form>
     <script src="./lock.js"></script>
     <script>
-        var lock = new PatternUnlock()
-        lock.init('lock')
+        var lock = new PatternUnlock({})
+        lock.init("lock-module")
     </script>
 </body>
 

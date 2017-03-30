@@ -6,29 +6,30 @@
      * @param {any} opt 
      */
     function PatternUnlock(opt) {
-        // this.type = 'type'
-        this.pointGroup = [] //所有触控点
-        this.linkGroup = [] //当前绘画路径点
-        this.savlinkGroup = [] //上次保存的路径点
-        this.radius = 0
-        this.status = 0 //1是检查密码，0是更新密码
+
+        this.pointGroup = opt.pointGroup || [] //所有触控点
+        this.linkGroup = opt.linkGroup || [] //当前绘画路径点
+        this.savlinkGroup = opt.savlinkGroup || [] //上次保存的路径点
+        this.radius = opt.radius || 0
+        this.status = 0 // 2是检查密码，1是更新密码,0是初始输入
+        this.devicePixelRatio = window.devicePixelRatio || 1;
     }
     //绑定事件
     PatternUnlock.prototype.bindEvent = function () {
         //是否一次点击
         this.oneTouch = false
         //屏幕坐标转变为canvas坐标
-        function getPos(event) {
+        var getPos = function (event) {
             var e = event
             var outPos = e.currentTarget.getBoundingClientRect()
-            var realX = e.touches[0].clientX - outPos.left
-            var realY = e.touches[0].clientY - outPos.top
+            var realX = (e.touches[0].clientX - outPos.left) * this.devicePixelRatio
+            var realY = (e.touches[0].clientY - outPos.top) * this.devicePixelRatio
             return {
                 x: realX,
                 y: realY
             }
 
-        }
+        }.bind(this)
         //求点到直线距离
         function getDis(p0, p1, p) {
             var dis
@@ -61,6 +62,8 @@
                     curPoint.click = true
                     this.linkGroup.push(curPoint)
                     this.drawPoint(curPoint.y, curPoint.x, 30, true)
+                } else {
+                    this.drawPoint(curPoint.y, curPoint.x, 30, false)
                 }
             }
 
@@ -73,21 +76,27 @@
             var pos = getPos(e)
             var lg = this.linkGroup
             var pg = this.pointGroup
-            this.ctx.clearRect(0, 0, 400, 400);
+            this.ctx.clearRect(0, 0, this.width, this.height);
 
-            if (lg.length != 0) {
-                var lastP = lg[lg.length - 1]
-                for (var i = 0, radius = this.radius; i < pg.length; i++) {
-                    var curPoint = this.pointGroup[i]
-                    this.drawPoint(this.pointGroup[i].y, this.pointGroup[i].x, 30, curPoint.click)
-                    if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius && !curPoint.click) {
+
+            for (var i = 0, radius = this.radius; i < pg.length; i++) {
+                var curPoint = this.pointGroup[i]
+                this.drawPoint(this.pointGroup[i].y,
+                    this.pointGroup[i].x,
+                    30,
+                    curPoint.click)
+                if (lg.length != 0) {
+                    var lastP = lg[lg.length - 1]
+                    if (Math.abs(pos.x - curPoint.x) < radius && Math.abs(pos.y - curPoint.y) < radius &&
+                        !curPoint.click) {
                         curPoint.click = true
                         //避免中途绕过点
                         for (var j = 0; j < pg.length; j++) {
                             //检测是否在连线范围内
                             if (getDis(lastP, pos, this.pointGroup[j]) < radius) {
                                 //检测是否在上一个决定点和移动点之间
-                                if (Math.abs(this.pointGroup[j].x - (pos.x + lastP.x) / 2) < radius && Math.abs(this.pointGroup[j].y - (pos.y + lastP.y) / 2) < radius) {
+                                if (Math.abs(this.pointGroup[j].x - (pos.x + lastP.x) / 2) < radius &&
+                                    Math.abs(this.pointGroup[j].y - (pos.y + lastP.y) / 2) < radius) {
                                     if (!this.pointGroup[j].click) {
                                         this.pointGroup[j].click = true
                                         this.linkGroup.push(this.pointGroup[j])
@@ -103,11 +112,13 @@
                         this.linkGroup.push(curPoint)
                         this.drawPoint(curPoint.y, curPoint.x, 30, true)
                     }
+                    this.drawLine(lg[lg.length - 1], pos)
                 }
-
-
-                this.drawLine(lg[lg.length - 1], pos)
             }
+
+
+
+
             for (var i = 0; i < lg.length - 1; i++) {
                 this.drawLine(lg[i], lg[i + 1])
             }
@@ -121,7 +132,7 @@
             var lg = this.linkGroup
             var pg = this.pointGroup
             //最后一次绘图
-            this.ctx.clearRect(0, 0, 400, 400);
+            this.ctx.clearRect(0, 0, this.width, this.height);
             for (var i = 0, radius = this.radius; i < pg.length; i++) {
                 var curPoint = this.pointGroup[i]
                 this.drawPoint(curPoint.y, curPoint.x, 30, curPoint.click)
@@ -143,9 +154,10 @@
                     }
                     break;
                 case 1:
+
                     if (this.compareStatus(this.savlinkGroup, this.linkGroup)) {
                         this.storeStatus('lockPwd')
-                        this.status = 2
+                        this.status = 1
                         this.clearStatus()
                         this.setHint('密码设置成功')
                     } else {
@@ -161,27 +173,22 @@
                     } else {
                         this.setHint('输入的密码不正确')
                     }
-                     this.clearStatus()
+                    this.clearStatus()
                     break;
                 default:
                     break;
 
             }
-            // if (this.status == 0) {
 
-
-            // } else if ()
-            // else if (this.status == 2) {
-
-            // }
         })
+
         //TODO: 选取状态
     }
     //TODO:清除当前所有点的触控状态
     PatternUnlock.prototype.clearStatus = function () {
         var pg = this.pointGroup
         var context = this.ctx
-        context.clearRect(0, 0, 400, 400);
+        context.clearRect(0, 0, this.width, this.height);
         this.linkGroup = []
         for (var i = 0, radius = this.radius; i < pg.length; i++) {
             var curPoint = this.pointGroup[i]
@@ -213,11 +220,19 @@
     }
     //对比状态
     PatternUnlock.prototype.compareStatus = function (oldList, newList) {
-        for (var i = 0; i < Math.max(oldList.length, newList.length); i++) {
-            if (oldList[i].id != newList[i].id) {
+        try {
+            if (oldList.length != newList.length) {
                 return false
             }
+            for (var i = 0; i < oldList.length; i++) {
+                if (oldList[i].id != newList[i].id) {
+                    return false
+                }
+            }
+        } catch (error) {
+            throw new Error(error)
         }
+
         return true
     }
     //画出连线
@@ -253,8 +268,18 @@
         this.hint.innerText = val
     }
     PatternUnlock.prototype.init = function (id) {
-        //获取元素        
-        var cav = this.cav = document.getElementById(id)
+        //获取元素       
+        var wrap = document.getElementById(id)
+        wrap.innerHTML = ` <canvas id="lock" width="400" height="400"></canvas>
+        <div id="info">
+        </div>
+        <form action="">
+            <label for="set" class="lock-label">设置密码</label>
+            <input type="radio" name="status" id="set" checked>
+            <label for="check"  class="lock-label">验证密码</label>
+            <input type="radio" name="status" id="check">
+        </form>`
+        var cav = this.cav = document.getElementById('lock')
         this.hint = document.getElementById('info')
         this.setVal = document.getElementById('set')
         this.checkVal = document.getElementById('check')
@@ -262,6 +287,14 @@
         //创建初始点
         var width = cav.width
         var height = cav.height
+        // 解决移动端canvas绘图变模糊问题
+        cav.style.width = width + "px";
+        cav.style.height = height + "px";
+        this.width = cav.height = height * this.devicePixelRatio;
+        this.height = cav.width = width * this.devicePixelRatio;
+
+        width = this.width
+        height = this.height
         if (this.pointGroup.length == 0) {
             var radius = this.radius = Math.floor(width / 14)
             for (var i = 0; i < 3; i++) {
